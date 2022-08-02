@@ -20,7 +20,7 @@ import java.util.UUID;
 @Tag(name = "Pautas")
 public interface PautaControlleOpenApi {
 
-    @Operation(summary = "Lista as pautas")
+    @Operation(summary = "Listar as pautas")
     @PageableParameter
     ResponseEntity<Page<PautaModel>> listar(@Parameter(hidden = true) Pageable pageable);
 

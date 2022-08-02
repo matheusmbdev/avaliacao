@@ -24,7 +24,7 @@ public interface PautaControlleOpenApi {
     @PageableParameter
     ResponseEntity<Page<PautaModel>> listar(@Parameter(hidden = true) Pageable pageable);
 
-    @Operation(summary = "Busca uma pauta por ID", responses = {
+    @Operation(summary = "Buscar uma pauta por ID", responses = {
             @ApiResponse(responseCode = "200", description = "OK", content = {
                     @Content(mediaType = "application/json", schema = @Schema(ref = "PautaModel"))
             }),
@@ -35,7 +35,7 @@ public interface PautaControlleOpenApi {
     ResponseEntity<PautaModel> buscar(@Parameter(description = "ID de uma pauta",
             example = "52b3a36c-6b69-45f9-9f28-e0b69d98a451", required = true) UUID pautaId);
 
-    @Operation(summary = "Cadastra uma nova pauta", responses = {
+    @Operation(summary = "Cadastrar uma nova pauta", responses = {
             @ApiResponse(responseCode = "201", description = "CREATED", content = {
                     @Content(mediaType = "application/json", schema = @Schema(ref = "PautaModel"))
             })
@@ -43,7 +43,7 @@ public interface PautaControlleOpenApi {
     ResponseEntity<PautaModel> adicionar(@RequestBody(description = "Representação de uma nova pauta",
             required = true) PautaInputModel pautaInputModel);
 
-    @Operation(summary = "Cria uma sessão de votação para uma pauta", responses = {
+    @Operation(summary = "Criar uma sessão de votação para uma pauta", responses = {
             @ApiResponse(responseCode = "201", description = "Sessão de votação iniciada.", content = {
                     @Content(mediaType = "application/json", schema = @Schema(example = "Sessão de votação iniciada"))
             }),
@@ -54,7 +54,7 @@ public interface PautaControlleOpenApi {
     ResponseEntity<String> abrirSessao(@Parameter(description = "ID de uma pauta",
             example = "52b3a36c-6b69-45f9-9f28-e0b69d98a451", required = true) UUID pautaId);
 
-    @Operation(summary = "Vota em uma pauta", responses = {
+    @Operation(summary = "Votar em uma pauta", responses = {
             @ApiResponse(responseCode = "200", description = "Voto contabilizado com sucesso!"),
             @ApiResponse(responseCode = "404",
                     description = "Pauta não encontrada.",

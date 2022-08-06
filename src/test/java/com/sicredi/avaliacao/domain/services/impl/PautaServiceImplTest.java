@@ -3,6 +3,7 @@ package com.sicredi.avaliacao.domain.services.impl;
 import com.sicredi.avaliacao.domain.exception.PautaNaoEncontradaException;
 import com.sicredi.avaliacao.domain.model.Pauta;
 import com.sicredi.avaliacao.domain.repositories.PautaRepository;
+import com.sicredi.avaliacao.util.Factory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -10,11 +11,9 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import java.time.OffsetDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.times;
@@ -35,9 +34,8 @@ class PautaServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        pauta = new Pauta();
-        pauta.setTema("Test");
-        pautaSalva = getPauta();
+        pauta = Factory.createEmptyPauta();
+        pautaSalva = Factory.createPauta();
     }
 
     @Test
@@ -49,22 +47,21 @@ class PautaServiceImplTest {
         var result = pautaService.salvar(pauta);
 
         // then
-        assertNotNull(result.getPautaId());
-        assertEquals(pauta.getTema(), result.getTema());
+        assertNotNull(result);
         verify(pautaRepository, times(1)).save(pauta);
     }
 
     @Test
     void deveriaRetornarPauta_QuandoBuscarOuFalharComPautaExistente() {
         // given
-        var existingId = pautaSalva.getPautaId();
+        var existingId = UUID.randomUUID();
         when(pautaRepository.findById(existingId)).thenReturn(Optional.of(pautaSalva));
 
         // when
-        var pauta = pautaService.buscarOuFalhar(existingId);
+        var result = pautaService.buscarOuFalhar(existingId);
 
         // then
-        assertEquals(existingId, pauta.getPautaId());
+        assertNotNull(result);
         verify(pautaRepository, times(1)).findById(existingId);
     }
 
@@ -79,13 +76,5 @@ class PautaServiceImplTest {
 
         // then
         verify(pautaRepository, times(1)).findById(nonExistsId);
-    }
-
-    private Pauta getPauta() {
-        return Pauta.builder()
-                .pautaId(UUID.randomUUID())
-                .tema(this.pauta.getTema())
-                .dataCriacao(OffsetDateTime.now())
-                .build();
     }
 }

@@ -1,8 +1,12 @@
 package com.sicredi.avaliacao;
 
-import com.sicredi.avaliacao.domain.enums.PautaStatus;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sicredi.avaliacao.api.cloud.feignclient.UserInfoClient;
+import com.sicredi.avaliacao.api.v1.model.AssociadoCpf;
+import com.sicredi.avaliacao.domain.enums.StatusCpf;
 import com.sicredi.avaliacao.domain.model.Pauta;
 import com.sicredi.avaliacao.domain.model.Sessao;
+import com.sicredi.avaliacao.domain.model.Voto;
 import com.sicredi.avaliacao.domain.repositories.PautaRepository;
 import com.sicredi.avaliacao.domain.repositories.SessaoRepository;
 import com.sicredi.avaliacao.util.DatabaseCleaner;
@@ -14,6 +18,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.context.TestPropertySource;
@@ -23,9 +28,10 @@ import java.util.UUID;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
+import static org.mockito.Mockito.when;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@TestPropertySource(properties = {"spring.config.location=classpath:application.yaml"})
+@TestPropertySource(properties = {"spring.config.location=classpath:application-test.yaml"})
 class PautaIT {
 
     private static final UUID PAUTA_ID_INEXISTENTE = UUID.randomUUID();
@@ -35,6 +41,7 @@ class PautaIT {
     public static final String JSON_INCORRETO_VOTO = "/json/incorreto/votoIncorreta.json";
     public static final String SESSAO_DE_VOTACAO_INICIADA = "Sessão de votação iniciada.";
     public static final String VOTO_CONTABILIZADO_COM_SUCESSO = "Voto contabilizado com sucesso!";
+    public static final String ASSOCIADO_ILEGIVEL_PARA_VOTACAO_NESTA_PAUTA = "Associado ilegível para votação nesta Pauta.";
 
     @Autowired
     private DatabaseCleaner databaseCleaner;
@@ -45,10 +52,20 @@ class PautaIT {
     @Autowired
     private SessaoRepository sessaoRepository;
 
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    @MockBean
+    private UserInfoClient userInfoClient;
+
     @LocalServerPort
     private int port;
 
     private Pauta primeiraPauta;
+
+    private Voto voto;
+
+    private AssociadoCpf associadoCpf;
 
     private int quantidadeDePautasCadastradas;
 
@@ -58,17 +75,21 @@ class PautaIT {
     private String jsonIncorretoVoto;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         RestAssured.enableLoggingOfRequestAndResponseIfValidationFails();
         RestAssured.port = port;
         RestAssured.basePath = "/v1/pauta";
 
         databaseCleaner.clearTables();
         prepararDados();
+
         jsonCorretoPauta = ResourceUtils.getContentFromResource(JSON_CORRETO_PAUTA);
         jsonIncorretoPauta = ResourceUtils.getContentFromResource(JSON_INCORRETO_PAUTA);
         jsonCorretoVoto = ResourceUtils.getContentFromResource(JSON_CORRETO_VOTO);
         jsonIncorretoVoto = ResourceUtils.getContentFromResource(JSON_INCORRETO_VOTO);
+
+        voto = objectMapper.readValue(jsonCorretoVoto, Voto.class);
+        associadoCpf = new AssociadoCpf(StatusCpf.ABLE_TO_VOTE);
     }
 
     @Test
@@ -166,8 +187,7 @@ class PautaIT {
 
     @Test
     void deveVotarEmUmaPauta_QuandoVotarEmPautaExistente() {
-
-        primeiraPauta.setPautaStatus(PautaStatus.EM_VOTACAO);
+        when(userInfoClient.checarCpf(sanitizarCpf(voto.getCpfAssociado()))).thenReturn(associadoCpf);
         Sessao sessao = new Sessao(primeiraPauta);
         sessaoRepository.save(sessao);
 
@@ -183,6 +203,26 @@ class PautaIT {
                             .extract().asString();
 
         Assertions.assertEquals(VOTO_CONTABILIZADO_COM_SUCESSO, result);
+    }
+
+    @Test
+    void deveRetornarStatus400_QuandoVotarEmPautaExistenteMasNaoSerLegivel() {
+        associadoCpf.setStatus(StatusCpf.UNABLE_TO_VOTE);
+        when(userInfoClient.checarCpf(sanitizarCpf(voto.getCpfAssociado()))).thenReturn(associadoCpf);
+        Sessao sessao = new Sessao(primeiraPauta);
+        sessaoRepository.save(sessao);
+
+        given()
+            .body(jsonCorretoVoto)
+            .contentType(ContentType.JSON)
+            .pathParam("pautaId", primeiraPauta.getPautaId())
+            .accept(ContentType.JSON)
+        .when()
+            .post("/{pautaId}/votar")
+        .then()
+            .statusCode(HttpStatus.BAD_REQUEST.value())
+            .body("detail", equalTo(ASSOCIADO_ILEGIVEL_PARA_VOTACAO_NESTA_PAUTA));
+
     }
 
     @Test
@@ -211,5 +251,9 @@ class PautaIT {
         this.quantidadeDePautasCadastradas = (int) pautaRepository.count();
     }
 
+    private String sanitizarCpf(String cpfAssociado) {
+        return cpfAssociado.replace(".", "")
+                .replace("-", "");
+    }
 }
 

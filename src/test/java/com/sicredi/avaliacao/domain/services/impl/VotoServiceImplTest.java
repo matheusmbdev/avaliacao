@@ -3,11 +3,11 @@ package com.sicredi.avaliacao.domain.services.impl;
 import com.sicredi.avaliacao.api.cloud.feignclient.UserInfoClient;
 import com.sicredi.avaliacao.api.v1.model.AssociadoCpf;
 import com.sicredi.avaliacao.domain.enums.StatusCpf;
-import com.sicredi.avaliacao.domain.enums.VotoEnum;
 import com.sicredi.avaliacao.domain.exception.NegocioException;
 import com.sicredi.avaliacao.domain.model.Pauta;
 import com.sicredi.avaliacao.domain.model.Voto;
 import com.sicredi.avaliacao.domain.repositories.VotoRepository;
+import com.sicredi.avaliacao.util.Factory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -42,10 +42,10 @@ class VotoServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        voto = new Voto();
+        voto = Factory.criarVotoVazio();
         voto.setCpfAssociado("000.000.000-00");
-        votoSalvo = getVoto();
-        pauta = new Pauta();
+        votoSalvo = Factory.criarVoto();
+        pauta = Factory.criarPautaVazia();
         associadoCpf = new AssociadoCpf();
     }
 
@@ -105,13 +105,6 @@ class VotoServiceImplTest {
         verify(userInfoClient, times(1)).checarCpf(sanitizarCpf(voto.getCpfAssociado()));
     }
 
-    private Voto getVoto() {
-        return Voto.builder()
-                .votoId(UUID.randomUUID())
-                .votoAssociado(VotoEnum.SIM)
-                .cpfAssociado("000.000.000-00")
-                .build();
-    }
     private String sanitizarCpf(String cpfAssociado) {
         return cpfAssociado.replace(".", "")
                 .replace("-", "");

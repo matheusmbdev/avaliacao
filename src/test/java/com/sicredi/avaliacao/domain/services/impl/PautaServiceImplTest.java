@@ -34,8 +34,8 @@ class PautaServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        pauta = Factory.createEmptyPauta();
-        pautaSalva = Factory.createPauta();
+        pauta = Factory.criarPautaVazia();
+        pautaSalva = Factory.criarPauta();
     }
 
     @Test

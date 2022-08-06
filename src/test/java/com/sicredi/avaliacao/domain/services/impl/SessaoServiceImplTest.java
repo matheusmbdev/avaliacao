@@ -8,6 +8,7 @@ import com.sicredi.avaliacao.domain.model.Sessao;
 import com.sicredi.avaliacao.domain.model.Voto;
 import com.sicredi.avaliacao.domain.repositories.SessaoRepository;
 import com.sicredi.avaliacao.domain.services.PautaService;
+import com.sicredi.avaliacao.util.Factory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -15,9 +16,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import java.time.OffsetDateTime;
 import java.util.Optional;
-import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -49,10 +48,10 @@ class SessaoServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        sessao = new Sessao();
-        sessaoSalva = getSessao();
-        pauta = getPauta();
-        voto = getVoto();
+        sessao = Factory.criarSessaoVazia();
+        sessaoSalva = Factory.criarSessao();
+        pauta = Factory.criarPauta();
+        voto = Factory.criarVoto();
     }
 
     @Test
@@ -187,28 +186,5 @@ class SessaoServiceImplTest {
         // then
         assertEquals(EXISTE_UMA_SESSAO_DE_VOTACAO_PARA_ESSA_PAUTA, negocioException.getMessage());
         verify(sessaoRepository, times(1)).findByPauta(pauta);
-    }
-
-    private Sessao getSessao() {
-        return Sessao.builder()
-                .sessaoId(UUID.randomUUID())
-                .aberta(true)
-                .build();
-    }
-
-    private Pauta getPauta() {
-        return Pauta.builder()
-                .pautaId(UUID.randomUUID())
-                .tema("tema")
-                .dataCriacao(OffsetDateTime.now())
-                .build();
-    }
-
-    private Voto getVoto() {
-        return Voto.builder()
-                .votoId(UUID.randomUUID())
-                .votoAssociado(VotoEnum.SIM)
-                .cpfAssociado("000.000.000.00")
-                .build();
     }
 }

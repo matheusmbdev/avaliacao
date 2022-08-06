@@ -2,7 +2,7 @@ spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/sicredi-avaliacao
     username: postgres
-    password: 22100932
+    password:
   jpa:
     hibernate:
       ddl-auto: update
@@ -21,6 +21,12 @@ feign:
         readTimeout: 10000
         loggerLevel: basic
 
+logging:
+  level:
+    com.sicredi: TRACE
+    root: INFO
+    org.springframework.web: DEBUG
+    org.hibernate: INFO
 
 user-info:
   url: 'https://user-info.herokuapp.com'

@@ -14,9 +14,7 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
@@ -24,6 +22,7 @@ import java.util.stream.Collectors;
 @Log4j2
 public class SessaoServiceImpl implements SessaoService {
 
+    public static final int DIVISOR = 2;
     private final SessaoRepository sessaoRepository;
     private final PautaService pautaService;
 
@@ -70,15 +69,8 @@ public class SessaoServiceImpl implements SessaoService {
         List<VotoEnum> votoEnums = pauta.getVotos().stream()
                 .map(Voto::getVotoAssociado).collect(Collectors.toList());
 
-        Map<VotoEnum, Integer> votosMap = votoEnums.stream()
-                .collect(Collectors.toMap(Function.identity(), voto -> 1, Integer::sum));
+        long votosAFavor = votoEnums.stream().filter(voto -> voto.equals(VotoEnum.SIM)).count();
 
-        Optional<Map.Entry<VotoEnum, Integer>> resultado = votosMap.entrySet().stream()
-                .max((votoAFavor, votoContra) -> votoAFavor.getValue() >= votoContra.getValue() ? 1 : -1);
-
-        if (resultado.isPresent()) {
-            return resultado.get().getKey();
-        }
-        return VotoEnum.NAO;
+        return votosAFavor > (votoEnums.size() / DIVISOR) ? VotoEnum.SIM : VotoEnum.NAO;
     }
 }
